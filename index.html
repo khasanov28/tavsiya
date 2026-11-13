@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>Тавсия</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root {
+    --dark: #0E5A63;
+    --accent: #2A9D8F;
+    --field: #FFFBEA;
+    --red: #C00000;
+    --bg: var(--tg-theme-bg-color, #ffffff);
+    --bg2: var(--tg-theme-secondary-bg-color, #f2f5f5);
+    --text: var(--tg-theme-text-color, #1b1b1b);
+    --hint: var(--tg-theme-hint-color, #7c8a8c);
+    --line: rgba(14, 90, 99, .18);
+    --input-bg: var(--tg-theme-bg-color, #ffffff);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg2); color: var(--text);
+    font: 15px/1.35 -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+  body { padding: 0 0 96px; }
+  header { background: var(--dark); color: #fff; padding: 12px 16px 10px; }
+  header h1 { margin: 0; font-size: 17px; letter-spacing: .5px; }
+  header .sub { font-size: 13px; opacity: .85; margin-top: 2px; }
+  section { background: var(--bg); margin: 10px 0; padding: 12px 16px; }
+  section h2 { margin: 0 0 10px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .full { grid-column: 1 / -1; }
+  label { display: block; font-size: 12px; font-weight: 600; color: var(--dark); margin-bottom: 3px; }
+  @media (prefers-color-scheme: dark) { label { color: #7fd1c7; } }
+  input, textarea, select {
+    width: 100%; font: inherit; color: var(--text); background: var(--input-bg);
+    border: 1px solid var(--line); border-bottom: 2px solid var(--accent); border-radius: 8px;
+    padding: 9px 10px; outline: none; -webkit-appearance: none; appearance: none;
+  }
+  textarea { resize: vertical; min-height: 42px; }
+  input:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(42,157,143,.2); }
+  .allergy-on { color: var(--red); font-weight: 700; border-bottom-color: var(--red); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .chip { border: 1px solid var(--accent); color: var(--accent); background: transparent; border-radius: 14px;
+    padding: 4px 10px; font: inherit; font-size: 13px; cursor: pointer; }
+  .chip.solid { background: var(--accent); color: #fff; }
+  .last { border-left: 3px solid var(--accent); padding: 8px 10px; background: var(--bg2); border-radius: 6px; font-size: 13px; }
+  .last ol { margin: 6px 0 8px 18px; padding: 0; }
+  .muted { color: var(--hint); font-size: 13px; }
+  .drug { border: 1px solid var(--line); border-radius: 10px; padding: 10px; margin-bottom: 10px; position: relative; }
+  .drug .head { display: flex; gap: 8px; align-items: baseline; padding-right: 30px; }
+  .drug .num { color: var(--hint); font-weight: 700; }
+  .drug .name { font-weight: 700; }
+  .drug .latin { color: var(--accent); font-size: 12px; font-style: italic; }
+  .drug .row3 { display: grid; grid-template-columns: 1fr 110px; gap: 6px; margin-top: 8px; }
+  .drug .row3 .method { grid-column: 1 / -1; }
+  .drug .row3 input { padding: 7px 8px; font-size: 14px; }
+  .drug details { margin-top: 6px; }
+  .drug summary { color: var(--accent); font-size: 13px; cursor: pointer; list-style: none; padding: 2px 0; }
+  .drug summary::-webkit-details-marker { display: none; }
+  .drug .del { position: absolute; top: 6px; right: 6px; border: 0; background: transparent; font-size: 20px;
+    color: var(--hint); cursor: pointer; width: 30px; height: 30px; }
+  .drug .changed input.mod { background: var(--field); color: #222; }
+  .search { position: relative; }
+  .suggest { position: absolute; left: 0; right: 0; top: 100%; z-index: 5; background: var(--bg); border: 1px solid var(--line);
+    border-radius: 0 0 10px 10px; box-shadow: 0 8px 18px rgba(0,0,0,.15); max-height: 300px; overflow-y: auto; }
+  .suggest div { padding: 9px 12px; border-bottom: 1px solid var(--line); cursor: pointer; }
+  .suggest div:hover, .suggest div.active { background: var(--bg2); }
+  .suggest small { display: block; color: var(--hint); font-size: 12px; }
+  .warn { color: var(--red); font-size: 12px; font-weight: 600; margin-top: 4px; }
+  .bottom { position: fixed; left: 0; right: 0; bottom: 0; padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+    background: var(--bg); border-top: 1px solid var(--line); display: none; }
+  .bottom button { width: 100%; padding: 13px; font: inherit; font-weight: 700; border: 0; border-radius: 10px;
+    background: var(--accent); color: #fff; cursor: pointer; }
+  .toast { position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%); background: rgba(0,0,0,.8);
+    color: #fff; padding: 8px 14px; border-radius: 16px; font-size: 13px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .toast.show { opacity: 1; }
+  #error { display: none; background: #fdecea; color: var(--red); padding: 12px 16px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>“BABY LIFE” · ТАВСИЯ</h1>
+  <div class="sub" id="who">Бемор: —</div>
+</header>
+<div id="error"></div>
+
+<section>
+  <h2>Бемор</h2>
+  <div class="grid">
+    <div><label for="by">Туғилган йили</label><input id="by" inputmode="numeric" maxlength="20" placeholder="2023"></div>
+    <div><label for="w">Вазни (кг)</label><input id="w" inputmode="decimal" maxlength="20" placeholder="12.5"></div>
+    <div class="full"><label for="ad">Манзили</label><input id="ad" maxlength="200"></div>
+    <div class="full"><label for="co">Шикояти</label><textarea id="co" rows="2" maxlength="300"></textarea></div>
+    <div class="full"><label for="dx">Ташхис</label><textarea id="dx" rows="2" maxlength="300"></textarea></div>
+    <div class="full">
+      <label for="al">Аллергия</label><input id="al" maxlength="200" placeholder="йўқ">
+      <div class="chips"><button class="chip" type="button" id="alNone">йўқ</button></div>
+    </div>
+  </div>
+</section>
+
+<section id="lastBox" hidden>
+  <h2>Олдинги ташриф</h2>
+  <div class="last" id="last"></div>
+</section>
+
+<section>
+  <h2>Дорилар</h2>
+  <div id="drugs"></div>
+  <div class="search">
+    <input id="q" placeholder="🔍 Дори номи — масалан «гал» ёки «aqua»" autocomplete="off" enterkeyhint="done">
+    <div class="suggest" id="sug" hidden></div>
+  </div>
+  <div class="chips" id="sets"></div>
+  <div class="muted" id="catInfo" style="margin-top:8px"></div>
+</section>
+
+<section>
+  <h2>Кейинги кўрик</h2>
+  <input id="nv" maxlength="100" placeholder="масалан: 5 кундан кейин">
+  <div class="chips" id="nvChips"></div>
+</section>
+
+<div class="bottom" id="fallbackBar"><button id="saveBtn" type="button">✅ Сақлаш ва PDF</button></div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  "use strict";
+  var tg = (window.Telegram && window.Telegram.WebApp) || null;
+  var $ = function (id) { return document.getElementById(id); };
+  var MAX_BYTES = 4000; // лимит Telegram на данные из мини-приложения — 4096 байт
+
+  // ---------- данные из ссылки (бот передаёт их в ?d=...) ----------
+  function b64decode(s) {
+    s = s.replace(/-/g, "+").replace(/_/g, "/");
+    while (s.length % 4) s += "=";
+    var bin = atob(s), bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new TextDecoder().decode(bytes);
+  }
+  var P = {};
+  try {
+    var d = new URLSearchParams(location.search).get("d");
+    if (d) P = JSON.parse(b64decode(d));
+  } catch (e) { showError("Не удалось прочитать данные пациента. Закройте форму и откройте снова."); }
+
+  function showError(t) { var el = $("error"); el.textContent = t; el.style.display = "block"; }
+  function toast(t) { var el = $("toast"); el.textContent = t; el.classList.add("show"); clearTimeout(toast.t);
+    toast.t = setTimeout(function () { el.classList.remove("show"); }, 1600); }
+
+  // ---------- поиск: регистр и узбекские буквы не важны ----------
+  var FOLD = { "ў": "у", "қ": "к", "ғ": "г", "ҳ": "х", "ё": "е", "ʻ": "'", "‘": "'", "’": "'", "`": "'" };
+  function fold(s) { return (s || "").toLowerCase().replace(/[ўқғҳёʻ‘’`]/g, function (c) { return FOLD[c]; }); }
+  function norm(s) { return fold(s).replace(/\s+/g, ""); }
+
+  // ---------- справочник ----------
+  var CAT = { d: [], vr: {}, s: [] }, byName = {};
+  function loadCatalog() {
+    var url = "drugs.json" + (P.cv ? "?v=" + encodeURIComponent(P.cv) : "");
+    return fetch(url, { cache: "no-cache" }).then(function (r) {
+      if (!r.ok) throw new Error(r.status);
+      return r.json();
+    }).then(function (c) {
+      CAT = c;
+      CAT.d.forEach(function (x) { byName[x[0]] = x; x._f = fold(x[0]) + " " + fold(x[4]); });
+      $("catInfo").textContent = "Справочник: " + CAT.d.length + " дори";
+      renderSets();
+    }).catch(function () {
+      $("catInfo").textContent = "⚠️ Справочник не загрузился — можно вписывать препараты вручную.";
+    });
+  }
+
+  // ---------- состояние ----------
+  var items = []; // {n, d, m, t, l, def:[d,m,t]}
+  var draftKey = "tavsiya_draft_" + (P.k || "demo");
+
+  function fillPatient() {
+    $("who").textContent = "Бемор: " + (P.n || "—") + (P.dt ? "   ·   " + P.dt : "");
+    $("by").value = P.by || "";
+    $("co").value = P.co || "";
+    $("al").value = P.al || "";
+    if (P.adk) $("ad").placeholder = "сақланган (ўзгармайди)";
+    paintAllergy();
+    if (P.last) {
+      $("lastBox").hidden = false;
+      var L = P.last, html = "<b>" + esc(L.d || "") + "</b>" + (L.dx ? " — " + esc(L.dx) : "") + "<ol>";
+      (L.it || []).forEach(function (x) { html += "<li>" + esc(x[0]) + (x[1] ? " — " + esc(x[1]) : "") + "</li>"; });
+      html += "</ol><button class='chip solid' type='button' id='repeat'>🔁 Такрорлаш (повторить)</button>";
+      $("last").innerHTML = html;
+      $("repeat").onclick = function () {
+        (L.it || []).forEach(function (x) { addItem(x[0], [x[1], x[2], x[3]]); });
+        if (!$("dx").value && L.dx) $("dx").value = L.dx;
+        toast("Қўшилди: " + (L.it || []).length);
+        save();
+      };
+    }
+    ["3", "5", "7", "10", "14", "30"].forEach(function (n) {
+      var b = document.createElement("button");
+      b.className = "chip"; b.type = "button"; b.textContent = n + " кун";
+      b.onclick = function () { $("nv").value = n + " кундан кейин"; save(); };
+      $("nvChips").appendChild(b);
+    });
+  }
+
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+
+  function paintAllergy() { $("al").classList.toggle("allergy-on", !!$("al").value.trim() && fold($("al").value.trim()) !== "йук"); }
+
+  // ---------- препараты ----------
+  function addItem(name, dose) {
+    var c = byName[name];
+    var def = c ? [c[1], c[2], c[3]] : ["", "", ""];
+    var val = dose || def;
+    items.push({ n: name, d: val[0] || "", m: val[1] || "", t: val[2] || "", l: c ? c[4] : "", def: def });
+    renderItems();
+  }
+
+  function renderItems() {
+    var box = $("drugs"); box.innerHTML = "";
+    var allergy = fold($("al").value.trim());
+    items.forEach(function (it, i) {
+      var div = document.createElement("div"); div.className = "drug";
+      var variants = (CAT.vr && CAT.vr[it.n]) || [];
+      var html = "<button class='del' type='button' aria-label='Ўчириш'>×</button>" +
+        "<div class='head'><span class='num'>" + (i + 1) + ".</span><span><span class='name'>" + esc(it.n) + "</span>" +
+        (it.l ? "<br><span class='latin'>(" + esc(it.l) + ")</span>" : "") + "</span></div>" +
+        "<div class='row3'>" +
+        "<input data-k='d' placeholder='Берилиш тартиби' value='" + esc(it.d) + "'>" +
+        "<input data-k='t' class='dur' placeholder='Давомийлиги' value='" + esc(it.t) + "'>" +
+        "<input data-k='m' class='method' placeholder='Қабул қилиш усули' value='" + esc(it.m) + "'>" +
+        "</div>";
+      // другие дозировки (и рекомендованная, если врач её изменил) — свёрнуты, чтобы не занимать экран
+      var cur = norm(it.d) + "|" + norm(it.m) + "|" + norm(it.t);
+      var options = [];
+      if (it.def[0] && norm(it.def[0]) + "|" + norm(it.def[1]) + "|" + norm(it.def[2]) !== cur) options.push(["✅ ", it.def]);
+      variants.forEach(function (v) { if (norm(v[0]) + "|" + norm(v[1]) + "|" + norm(v[2]) !== cur) options.push(["", v]); });
+      if (options.length) {
+        html += "<details" + (it.open ? " open" : "") + "><summary>📋 Бошқа дозалар (" + options.length + ") ▾</summary><div class='chips'>";
+        options.forEach(function (o, j) { html += "<button class='chip' type='button' data-v='" + j + "'>" + o[0] + esc(o[1].filter(Boolean).join(" | ")) + "</button>"; });
+        html += "</div></details>";
+      }
+      if (allergy && allergy !== "йук" && allergy.length > 2 && (fold(it.n).indexOf(allergy) >= 0 || allergy.indexOf(fold(it.n).split(" ")[0]) >= 0)) {
+        html += "<div class='warn'>⚠️ Аллергия: " + esc($("al").value) + "</div>";
+      }
+      div.innerHTML = html;
+      var det = div.querySelector("details");
+      if (det) det.ontoggle = function () { it.open = det.open; };
+      div.querySelector(".del").onclick = function () { items.splice(i, 1); renderItems(); save(); };
+      div.querySelectorAll("input").forEach(function (inp) {
+        markMod(inp, it);
+        inp.oninput = function () { it[inp.dataset.k] = inp.value; markMod(inp, it); save(); };
+      });
+      div.querySelectorAll("[data-v]").forEach(function (b) {
+        b.onclick = function () { var v = options[+b.dataset.v][1]; it.d = v[0] || ""; it.m = v[1] || ""; it.t = v[2] || ""; it.open = false; renderItems(); save(); toast("Доза ўзгартирилди"); };
+      });
+      box.appendChild(div);
+    });
+    updateButton();
+  }
+
+  function markMod(inp, it) {
+    var idx = { d: 0, m: 1, t: 2 }[inp.dataset.k];
+    var changed = norm(inp.value) !== norm(it.def[idx] || "");
+    inp.classList.toggle("mod", changed && !!it.def[0]);
+    inp.parentNode.parentNode.classList.toggle("changed", true);
+  }
+
+  // ---------- подсказки ----------
+  var active = -1, results = [];
+  function search(q) {
+    var words = fold(q).split(/\s+/).filter(Boolean);
+    if (!words.length) return [];
+    var out = [];
+    CAT.d.forEach(function (x) {
+      if (words.every(function (w) { return x._f.indexOf(w) >= 0; })) {
+        var starts = fold(x[0]).indexOf(words[0]) === 0 || fold(x[4]).indexOf(words[0]) === 0;
+        out.push([starts ? 0 : 1, -(x[6] || 0), x[0], x]);
+      }
+    });
+    out.sort(function (a, b) { return a[0] - b[0] || a[1] - b[1] || (a[2] < b[2] ? -1 : 1); });
+    return out.slice(0, 12).map(function (o) { return o[3]; });
+  }
+  function renderSuggest() {
+    var q = $("q").value.trim(), sug = $("sug");
+    results = search(q); active = results.length ? 0 : -1;
+    if (!q) { sug.hidden = true; return; }
+    var html = "";
+    results.forEach(function (x, i) {
+      html += "<div data-i='" + i + "'" + (i === active ? " class='active'" : "") + ">" + esc(x[0]) +
+        "<small>" + esc([x[1], x[2], x[3]].filter(Boolean).join(" | ")) + "</small></div>";
+    });
+    html += "<div data-new='1'>➕ «" + esc(q) + "» — қўлда киритиш<small>справочникда йўқ препарат</small></div>";
+    sug.innerHTML = html; sug.hidden = false;
+    sug.querySelectorAll("[data-i]").forEach(function (el) { el.onmousedown = el.ontouchstart = function (e) { e.preventDefault(); pick(results[+el.dataset.i][0]); }; });
+    sug.querySelector("[data-new]").onmousedown = sug.querySelector("[data-new]").ontouchstart = function (e) { e.preventDefault(); pick(q); };
+  }
+  function pick(name) {
+    addItem(name);
+    $("q").value = ""; $("sug").hidden = true;
+    toast("Қўшилди: " + name);
+    save();
+    // курсор — в дозировку, если препарат новый (без рекомендации)
+    var last = $("drugs").lastElementChild;
+    if (last && !items[items.length - 1].d) last.querySelector("input").focus(); else $("q").blur();
+  }
+  $("q").addEventListener("input", renderSuggest);
+  $("q").addEventListener("keydown", function (e) {
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault(); if (!results.length) return;
+      active = (active + (e.key === "ArrowDown" ? 1 : -1) + results.length) % results.length;
+      $("sug").querySelectorAll("[data-i]").forEach(function (el, i) { el.classList.toggle("active", i === active); });
+    } else if (e.key === "Enter") {
+      e.preventDefault(); var q = $("q").value.trim(); if (!q) return;
+      pick(active >= 0 && results[active] ? results[active][0] : q);
+    } else if (e.key === "Escape") { $("sug").hidden = true; }
+  });
+  $("q").addEventListener("blur", function () { setTimeout(function () { $("sug").hidden = true; }, 150); });
+
+  function renderSets() {
+    var box = $("sets"); box.innerHTML = "";
+    (CAT.s || []).forEach(function (s) {
+      var b = document.createElement("button");
+      b.className = "chip"; b.type = "button"; b.textContent = "📦 " + s[0];
+      b.onclick = function () { s[1].forEach(function (x) { addItem(x[0], [x[1], x[2], x[3]]); }); toast("Тўплам қўшилди"); save(); };
+      box.appendChild(b);
+    });
+  }
+
+  // ---------- черновик (если форму случайно закрыли) ----------
+  function collect() {
+    return {
+      k: P.k || "", by: $("by").value.trim(), w: $("w").value.trim(), ad: $("ad").value.trim(),
+      co: $("co").value.trim(), dx: $("dx").value.trim(), al: $("al").value.trim(), nv: $("nv").value.trim(),
+      it: items.map(function (x) { return [x.n, x.d.trim(), x.m.trim(), x.t.trim()]; })
+    };
+  }
+  function save() { try { localStorage.setItem(draftKey, JSON.stringify(collect())); } catch (e) {} updateButton(); }
+  function restore() {
+    var s = null;
+    try { s = JSON.parse(localStorage.getItem(draftKey) || "null"); } catch (e) {}
+    if (!s) return;
+    ["by", "w", "ad", "co", "dx", "al", "nv"].forEach(function (k) { if (s[k] != null) $(k).value = s[k]; });
+    (s.it || []).forEach(function (x) { addItem(x[0], [x[1], x[2], x[3]]); });
+    paintAllergy();
+    toast("Черновик тикланди");
+  }
+  ["by", "w", "ad", "co", "dx", "al", "nv"].forEach(function (k) {
+    $(k).addEventListener("input", function () { if (k === "al") { paintAllergy(); renderItems(); } save(); });
+  });
+  $("alNone").onclick = function () { $("al").value = "йўқ"; paintAllergy(); renderItems(); save(); };
+
+  // ---------- отправка ----------
+  function submit() {
+    if (!items.length) { toast("Камида битта дори қўшинг"); $("q").focus(); return; }
+    var data = collect();
+    var json = JSON.stringify(data);
+    var bytes = new TextEncoder().encode(json).length;
+    if (bytes > MAX_BYTES) { showError("Слишком много текста (" + bytes + " байт из " + MAX_BYTES + "). Сократите описания или разбейте на две тавсии."); return; }
+    try { localStorage.removeItem(draftKey); } catch (e) {}
+    if (tg && tg.sendData && tg.initData !== undefined && tg.platform !== "unknown") {
+      tg.sendData(json); // Telegram закроет форму и передаст данные боту
+    } else {
+      window.__lastPayload = json; // режим проверки в обычном браузере
+      showError("Предпросмотр вне Telegram. Данные: " + json);
+    }
+  }
+  function updateButton() {
+    if (tg && tg.MainButton && tg.platform !== "unknown") {
+      tg.MainButton.setText(items.length ? "✅ Сақлаш ва PDF (" + items.length + ")" : "Дори қўшинг");
+      tg.MainButton.color = items.length ? "#2A9D8F" : "#9aa8aa";
+      tg.MainButton.show();
+    } else {
+      $("fallbackBar").style.display = "block";
+      $("saveBtn").textContent = items.length ? "✅ Сақлаш ва PDF (" + items.length + ")" : "Дори қўшинг";
+    }
+  }
+  $("saveBtn").onclick = submit;
+
+  if (tg && tg.platform !== "unknown") {
+    tg.ready(); tg.expand();
+    try { tg.enableClosingConfirmation(); } catch (e) {}
+    tg.MainButton.onClick(submit);
+  }
+  fillPatient();
+  loadCatalog().then(function () { restore(); renderItems(); });
+})();
+</script>
+</body>
+</html>
